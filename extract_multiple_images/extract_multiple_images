@@ -1,0 +1,25 @@
+#!/bin/sh
+
+set -e
+
+DEST=$1
+
+[ -d $DEST ] || mkdir $DEST
+
+shift
+
+TARGETS=$@
+
+for TARGET in $TARGETS
+do
+	rm -rf working_ocilayout
+	if [[ -z "${CRED_USER}" ]] || [[ -z "${CRED_SECRET}" ]]; then
+		skopeo copy $TARGET oci:working_ocilayout:latest
+	else
+		echo "Pulling with credentials!"		
+		skopeo copy --src-creds=$CRED_USER:$CRED_SECRET $TARGET oci:working_ocilayout:latest		
+	fi
+	umoci unpack --rootless --image working_ocilayout working_rootfs
+	cp -a working_rootfs/rootfs/. $DEST
+	rm -rf working_rootfs
+done
